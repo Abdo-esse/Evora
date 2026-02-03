@@ -55,12 +55,17 @@ export class AuthService {
     }
 
     async logout(refreshToken: string) {
-        const refreshTokenDecoded = this.jwtService.verify(refreshToken, { secret: process.env.JWT_SECRET });
-        if (refreshTokenDecoded) {
-            await this.prisma.refreshToken.delete({
-                where: { token: refreshToken },
-            });
-        }
+        try {
+            const refreshTokenDecoded = this.jwtService.verify(refreshToken, { secret: process.env.JWT_SECRET });
+            if (refreshTokenDecoded) {
+                await this.prisma.refreshToken.delete({
+                    where: { token: refreshToken },
+                });
+            }
+        } catch (error) {
+            // If token is invalid or expired, we can still consider logout successful from user point of view
+            // but we might want to log it or handle it. For now, let's just make sure it doesn't crash.
+        }       
         return true;
     }
 
@@ -71,7 +76,13 @@ export class AuthService {
         if (!findRefreshToken) {
             throw new NotFoundException('Refresh token not found');
         }
-        const decoded = this.jwtService.verify(refreshToken, { secret: process.env.JWT_SECRET });
+        let decoded;
+        try {
+            decoded = this.jwtService.verify(refreshToken, { secret: process.env.JWT_SECRET });
+        } catch (error) {
+            throw new UnauthorizedException('Invalid refresh token');
+        }
+
         if (!decoded || !decoded.sub) {
             throw new UnauthorizedException('Invalid refresh token');
         }
