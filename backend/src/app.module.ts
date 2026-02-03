@@ -7,9 +7,11 @@ import { UsersModule } from './users/users.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { EventsModule } from './events/events.module';
 
+import { PrismaModule } from './prisma/prisma.module';
+
 @Module({
-  imports: [LoggerModule, AuthModule, UsersModule, ReservationsModule, EventsModule],
+  imports: [LoggerModule, AuthModule, UsersModule, ReservationsModule, EventsModule, PrismaModule],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule { }
