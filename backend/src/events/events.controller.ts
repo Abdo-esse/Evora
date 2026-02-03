@@ -38,5 +38,9 @@ export class EventsController {
         return this.eventsService.getEvent(id, req.user.role);
     }
 
-    
+    @UseGuards(AuthGuard)
+    @Get()
+    async getAll(@Query('page') page: number, @Query('limit') limit: number, @Query('search') search: string, @Query('status') status: EventStatus, @Req() req) {
+        return this.eventsService.getAllEvents(page, limit, search, status, req.user.role);
+    }
 }
