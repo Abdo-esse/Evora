@@ -61,9 +61,10 @@ model Event {
   id        String      @id @default(uuid()) @db.Uuid
   title     String
   description String
-  dateTime  DateTime
+  startDate  DateTime
+  endDate  DateTime
   location  String
-  capacity  Int
+  maxAttendees  Int
   status    EventStatus
 
   createdById String   @db.Uuid
