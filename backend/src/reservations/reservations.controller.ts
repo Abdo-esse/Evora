@@ -39,4 +39,20 @@ export class ReservationsController {
         return this.reservationsService.updateReservationStatus(id, ReservationStatus.CONFIRMED, req.user.sub, req.user.role);
     }
 
+    
+
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles([Role.ADMIN_ORG])
+    @Put(':id/cancel')
+    async cancel(@Param('id') id: string, @Req() req) {
+        return this.reservationsService.updateReservationStatus(id, ReservationStatus.CANCELED, req.user.sub, req.user.role);
+    }
+
+    @UseGuards(AuthGuard, RolesGuard)
+    @Roles([Role.ADMIN_ORG])
+    @Put(':id/refuse')
+    async refuse(@Param('id') id: string, @Req() req) {
+        return this.reservationsService.updateReservationStatus(id, ReservationStatus.REFUSED, req.user.sub, req.user.role);
+    }
+
 }
