@@ -153,17 +153,14 @@ export class ReservationsService {
 
         const where: Prisma.ReservationWhereInput = {};
 
-        // Restriction PARTICIPANT
         if (role === Role.PARTICIPANT && userId) {
             where.userId = userId;
         }
 
-        // Filtre status
         if (status) {
             where.status = status;
         }
 
-        // Recherche (event.title OU user.name)
         if (search && search.trim() !== '') {
             where.OR = [
             {
