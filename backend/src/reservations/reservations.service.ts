@@ -5,12 +5,15 @@ import { EventStatus } from '../common/enums/eventStatus';
 import { ReservationStatus } from '../common/enums/reservationStatus';
 import { Role } from '../common/enums/role';
 import { Prisma } from '@prisma/client';
+import PDFDocument from 'pdfkit';
+import { Response } from 'express';
+import { ticketTemplate } from '../templates/ticket.template';
 
 @Injectable()
 export class ReservationsService {
     constructor(private readonly prisma: PrismaService) { }
 
-    async createReservation( createReservationDto: CreateReservationDto, userId: string) {
+    async createReservation(createReservationDto: CreateReservationDto, userId: string) {
         return this.prisma.$transaction(async (tx) => {
 
             const event = await tx.event.findUnique({
@@ -52,8 +55,8 @@ export class ReservationsService {
             return tx.reservation.create({
                 data: {
                     ...createReservationDto,
-                    userId: createReservationDto.userId,
-                    status: ReservationStatus.PENDING, 
+                    userId,
+                    status: ReservationStatus.PENDING,
                 },
             });
         });
@@ -66,7 +69,7 @@ export class ReservationsService {
         role: Role,
     ) {
         return this.prisma.$transaction(async (tx) => {
-            if(role === Role.PARTICIPANT && newStatus !== ReservationStatus.CANCELED){
+            if (role === Role.PARTICIPANT && newStatus !== ReservationStatus.CANCELED) {
                 throw new ForbiddenException('Not allowed');
             }
             const reservation = await tx.reservation.findUnique({
@@ -88,7 +91,7 @@ export class ReservationsService {
                     ReservationStatus.REFUSED,
                     ReservationStatus.CANCELED,
                 ],
-                [ReservationStatus.CONFIRMED]: [ReservationStatus.CANCELED ],
+                [ReservationStatus.CONFIRMED]: [ReservationStatus.CANCELED],
                 [ReservationStatus.REFUSED]: [],
                 [ReservationStatus.CANCELED]: [],
             };
@@ -120,7 +123,7 @@ export class ReservationsService {
 
     }
 
-    async getReservation(id: string,role: Role,userId: string) {
+    async getReservation(id: string, role: Role, userId: string) {
         const reservation = await this.prisma.reservation.findUnique({
             where: { id },
             include: {
@@ -133,7 +136,7 @@ export class ReservationsService {
             throw new NotFoundException('Reservation not found');
         }
 
-        if(role === Role.PARTICIPANT && reservation.userId !== userId){
+        if (role === Role.PARTICIPANT && reservation.userId !== userId) {
             throw new ForbiddenException('Not allowed');
         }
 
@@ -142,12 +145,12 @@ export class ReservationsService {
 
 
     async getAllReservations(
-    role: Role,
-    userId?: string,
-    page: number = 1,
-    limit: number = 10,
-    search?: string,
-    status?: ReservationStatus,
+        role: Role,
+        userId?: string,
+        page: number = 1,
+        limit: number = 10,
+        search?: string,
+        status?: ReservationStatus,
     ) {
         const skip = Math.max(0, (page - 1) * limit);
 
@@ -163,30 +166,30 @@ export class ReservationsService {
 
         if (search && search.trim() !== '') {
             where.OR = [
-            {
-                event: {
-                title: { contains: search, mode: 'insensitive' },
+                {
+                    event: {
+                        title: { contains: search, mode: 'insensitive' },
+                    },
                 },
-            },
-            {
-                user: {
-                firstName: { contains: search, mode: 'insensitive' },
-                lastName: { contains: search, mode: 'insensitive' },
+                {
+                    user: {
+                        firstName: { contains: search, mode: 'insensitive' },
+                        lastName: { contains: search, mode: 'insensitive' },
+                    },
                 },
-            },
             ];
         }
 
         const [data, total] = await this.prisma.$transaction([
             this.prisma.reservation.findMany({
-            where,
-            skip,
-            take: limit,
-            include: {
-            user: true,
-            event: true,
-            },
-            orderBy: { createdAt: 'desc' },
+                where,
+                skip,
+                take: limit,
+                include: {
+                    user: true,
+                    event: true,
+                },
+                orderBy: { createdAt: 'desc' },
             }),
             this.prisma.reservation.count({ where }),
         ]);
@@ -198,6 +201,42 @@ export class ReservationsService {
             limit,
             totalPages: Math.ceil(total / limit),
         };
+    }
+
+
+
+    async generateTicket(reservationId: string, userId: string, res: Response) {
+        const reservation = await this.prisma.reservation.findUnique({
+            where: { id: reservationId },
+            include: { user: true, event: true },
+        });
+
+        if (!reservation) throw new NotFoundException('Reservation not found');
+        if (reservation.userId !== userId) throw new ForbiddenException('Not allowed');
+        if (reservation.status !== ReservationStatus.CONFIRMED)
+            throw new BadRequestException('Ticket only for confirmed reservations');
+
+        const doc = new PDFDocument({ size: 'A4', margin: 50 });
+
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader(
+            'Content-Disposition',
+            `attachment; filename=ticket-${reservation.id}.pdf`,
+        );
+
+        doc.pipe(res);
+
+        ticketTemplate(doc, {
+            reservationId: reservation.id,
+            userFullName: `${reservation.user.firstName} ${reservation.user.lastName}`,
+            email: reservation.user.email,
+            eventTitle: reservation.event.title,
+            eventDate: reservation.event.startDate,
+            location: reservation.event.location,
+            status: reservation.status,
+        });
+
+        doc.end();
     }
 
 
