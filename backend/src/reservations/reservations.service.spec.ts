@@ -120,7 +120,9 @@ describe('ReservationsService', () => {
       });
 
       prisma.reservation.count.mockResolvedValue(2);
-      prisma.reservation.update.mockResolvedValue({ status: ReservationStatus.CONFIRMED });
+      prisma.reservation.update.mockResolvedValue({
+        status: ReservationStatus.CONFIRMED,
+      });
 
       const result = await service.updateReservationStatus(
         'r1',

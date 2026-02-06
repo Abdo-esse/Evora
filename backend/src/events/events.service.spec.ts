@@ -4,6 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { EventStatus } from '../common/enums/eventStatus';
 import { Role } from '../common/enums/role';
+import { ReservationStatus } from '../common/enums/reservationStatus';
 
 describe('EventsService', () => {
   let service: EventsService;
@@ -107,7 +108,9 @@ describe('EventsService', () => {
     it('should throw NotFoundException if event does not exist', async () => {
       prismaMock.event.findUnique.mockResolvedValue(null);
 
-      await expect(service.updateEvent('invalid-id', {})).rejects.toThrow(NotFoundException);
+      await expect(service.updateEvent('invalid-id', {})).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 
@@ -119,14 +122,18 @@ describe('EventsService', () => {
       const result = await service.deleteEvent('event-id');
 
       expect(result).toBe(true);
-      expect(prismaMock.event.delete).toHaveBeenCalledWith({ where: { id: 'event-id' } });
+      expect(prismaMock.event.delete).toHaveBeenCalledWith({
+        where: { id: 'event-id' },
+      });
     });
 
     it('should throw BadRequestException on delete error', async () => {
       prismaMock.event.findUnique.mockResolvedValue(mockEvent);
       prismaMock.event.delete.mockRejectedValue(new Error('Prisma Error'));
 
-      await expect(service.deleteEvent('event-id')).rejects.toThrow(BadRequestException);
+      await expect(service.deleteEvent('event-id')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 
@@ -134,7 +141,10 @@ describe('EventsService', () => {
     it('should return event with limit calculation', async () => {
       const eventWithReservations = {
         ...mockEvent,
-        reservations: [{ id: 'res-1' }, { id: 'res-2' }],
+        reservations: [
+          { status: ReservationStatus.CONFIRMED },
+          { status: ReservationStatus.PENDING },
+        ],
       };
       prismaMock.event.findUnique.mockResolvedValue(eventWithReservations);
 
@@ -148,7 +158,9 @@ describe('EventsService', () => {
       const draftEvent = { ...mockEvent, status: EventStatus.DRAFT };
       prismaMock.event.findUnique.mockResolvedValue(draftEvent);
 
-      await expect(service.getEvent('event-id', Role.PARTICIPANT)).rejects.toThrow(BadRequestException);
+      await expect(
+        service.getEvent('event-id', Role.PARTICIPANT),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('should allow admin to view a non-published event', async () => {
@@ -163,7 +175,9 @@ describe('EventsService', () => {
     it('should throw NotFoundException if event not found', async () => {
       prismaMock.event.findUnique.mockResolvedValue(null);
 
-      await expect(service.getEvent('event-id', Role.ADMIN_ORG)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.getEvent('event-id', Role.ADMIN_ORG),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -171,7 +185,13 @@ describe('EventsService', () => {
     it('should return events with pagination and filtering', async () => {
       prismaMock.event.findMany.mockResolvedValue([mockEvent]);
 
-      const result = await service.getAllEvents(1, 10, 'search', EventStatus.PUBLISHED, Role.PARTICIPANT);
+      const result = await service.getAllEvents(
+        1,
+        10,
+        'search',
+        EventStatus.PUBLISHED,
+        Role.PARTICIPANT,
+      );
 
       expect(result).toHaveLength(1);
       expect(prismaMock.event.findMany).toHaveBeenCalledWith({
@@ -189,11 +209,13 @@ describe('EventsService', () => {
 
       await service.getAllEvents(1, 10, '', EventStatus.DRAFT, Role.ADMIN_ORG);
 
-      expect(prismaMock.event.findMany).toHaveBeenCalledWith(expect.objectContaining({
-        where: expect.objectContaining({
-          status: EventStatus.DRAFT,
+      expect(prismaMock.event.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            status: EventStatus.DRAFT,
+          }),
         }),
-      }));
+      );
     });
   });
 });

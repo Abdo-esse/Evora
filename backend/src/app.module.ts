@@ -10,8 +10,15 @@ import { EventsModule } from './events/events.module';
 import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
-  imports: [LoggerModule, AuthModule, UsersModule, ReservationsModule, EventsModule, PrismaModule],
+  imports: [
+    LoggerModule,
+    AuthModule,
+    UsersModule,
+    ReservationsModule,
+    EventsModule,
+    PrismaModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
