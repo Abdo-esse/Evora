@@ -3,6 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto } from '../common/dtos/events.dto';
 import { EventStatus } from '../common/enums/eventStatus';
 import { Role } from '../common/enums/role';
+import { ReservationStatus } from '../common/enums/reservationStatus';
 
 @Injectable()
 export class EventsService {
@@ -55,7 +56,7 @@ export class EventsService {
             where: { id },
             include: {
                 createdBy: true,
-                reservations: { select: { id: true } }
+                reservations: { select: { status: true } }
             }
         });
 
@@ -67,7 +68,7 @@ export class EventsService {
             throw new BadRequestException('Event is not published');
         }
 
-        const limit = event.maxAttendees - event.reservations.length;
+        const limit = event.maxAttendees - event.reservations.filter(reservation => reservation.status === ReservationStatus.CONFIRMED || reservation.status === ReservationStatus.PENDING).length;
         return { ...event, limit };
     }
 

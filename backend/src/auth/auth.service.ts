@@ -65,7 +65,7 @@ export class AuthService {
         } catch (error) {
             // If token is invalid or expired, we can still consider logout successful from user point of view
             // but we might want to log it or handle it. For now, let's just make sure it doesn't crash.
-        }       
+        }
         return true;
     }
 
@@ -93,13 +93,7 @@ export class AuthService {
             throw new NotFoundException('User not found');
         }
         const accessToken = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role }, { expiresIn: '15m', secret: process.env.JWT_SECRET, algorithm: (process.env.JWT_ALGORITHM as any) || 'HS256' });
-        const newRefreshToken = this.jwtService.sign({ sub: user.id, email: user.email, role: user.role }, { expiresIn: '7d', secret: process.env.JWT_SECRET, algorithm: (process.env.JWT_ALGORITHM as any) || 'HS256' });
-        // update refresh token
-        await this.prisma.refreshToken.update({
-            where: { token: findRefreshToken.token },
-            data: { token: newRefreshToken },
-        });
 
-        return { accessToken, refreshToken: newRefreshToken };
+        return { accessToken, refreshToken: findRefreshToken.token };
     }
 }

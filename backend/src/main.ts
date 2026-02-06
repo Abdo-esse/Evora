@@ -10,11 +10,15 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const logger = app.get(WINSTON_MODULE_PROVIDER);
   app.use(cookieParser());
+  app.enableCors({
+    origin: 'http://localhost:3001',
+    credentials: true,
+  });
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true, // supprime les champs non déclarés dans le DTO
-      forbidNonWhitelisted: true, // rejette les requêtes avec champs inconnus
-      transform: true, // convertit les payloads en instances de DTO
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
     }),
   );
   app.useLogger(logger);
