@@ -57,6 +57,9 @@ export default function EventForm({ event, mode }: EventFormProps) {
     if (!form.title.trim()) errs.push("Title is required");
     if (!form.startDate) errs.push("Start date is required");
     if (!form.endDate) errs.push("End date is required");
+    if (form.startDate && new Date(form.startDate) < new Date()) {
+      errs.push("Start date must be in the future");
+    }
     if (form.startDate && form.endDate && new Date(form.endDate) <= new Date(form.startDate)) {
       errs.push("End date must be after start date");
     }
