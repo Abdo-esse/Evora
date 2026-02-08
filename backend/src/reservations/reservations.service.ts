@@ -7,10 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateReservationDto } from '../common/dtos/reservations.dto';
-import { EventStatus } from '../common/enums/eventStatus';
-import { ReservationStatus } from '../common/enums/reservationStatus';
-import { Role } from '../common/enums/role';
-import { Prisma } from '@prisma/client';
+import { EventStatus, ReservationStatus, Role, Prisma } from '@prisma/client';
 import PDFDocument from 'pdfkit';
 import { Response } from 'express';
 import { ticketTemplate } from '../templates/ticket.template';

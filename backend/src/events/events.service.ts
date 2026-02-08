@@ -5,9 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto, UpdateEventDto } from '../common/dtos/events.dto';
-import { EventStatus } from '../common/enums/eventStatus';
-import { Role } from '../common/enums/role';
-import { ReservationStatus } from '../common/enums/reservationStatus';
+import { EventStatus, Role, ReservationStatus } from '@prisma/client';
 
 @Injectable()
 export class EventsService {
